@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0b6e75">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>My Rota</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@700;800&family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* Read-only phone view of the Weekly Operations Planner: my week, and who is on each day. */
+:root{
+  --bg:#f4f6f7; --surface:#fff; --sunk:#eaeef0; --line:#d5dde1; --fg:#14232b; --muted:#5b6c75;
+  --accent:#0b6e75; --accent-soft:#d7eeef; --on-accent:#fff; --bad:#b3261e; --bad-soft:#f9dedb; --good:#1e7a46; --good-soft:#dcf1e4;
+  --f-display:"Manrope",system-ui,sans-serif; --f-body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif; color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font:15px/1.45 var(--f-body);-webkit-text-size-adjust:100%}
+.wrap{max-width:560px;margin:0 auto;padding:0 max(16px,env(safe-area-inset-left)) calc(24px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-right))}
+header{position:sticky;top:0;z-index:5;background:var(--surface);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top)}
+.hd{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0 8px}
+.hd h1{font:800 18px var(--f-display);margin:0}
+.hd button{border:1px solid var(--line);background:var(--surface);color:var(--muted);font:600 12px var(--f-body);padding:5px 10px;border-radius:7px}
+.wk{display:flex;align-items:center;gap:6px;padding-bottom:10px}
+.wk button{flex:none;width:40px;height:38px;border:1px solid var(--line);background:var(--surface);border-radius:9px;font-size:20px;color:var(--fg)}
+.wk .lbl{flex:1;text-align:center;font-weight:700;font-size:14px}
+.wk .lbl small{display:block;font-weight:500;color:var(--muted);font-size:12px}
+.wk .today{width:auto;font:600 13px var(--f-body);padding:0 12px}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--sunk);padding:3px;border-radius:10px;margin:12px 0}
+.tabs button{border:0;background:transparent;font:600 14px var(--f-body);color:var(--muted);padding:9px;border-radius:8px}
+.tabs button[aria-pressed=true]{background:var(--surface);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+select.me{width:100%;font:600 15px var(--f-body);padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--fg);margin-bottom:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.card.today{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.card.off{background:transparent}
+.ch{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.ch b{font-size:15px}
+.ch .t{font:700 16px var(--f-body);font-variant-numeric:tabular-nums}
+.ch .muted,.muted{color:var(--muted);font-size:13px}
+.tag{display:inline-block;font-size:11px;font-weight:700;color:var(--accent);background:var(--accent-soft);border-radius:99px;padding:1px 8px;margin-left:6px;vertical-align:1px}
+.bar{display:flex;height:12px;border-radius:4px;overflow:hidden;margin:10px 0 8px;background:var(--sunk)}
+.bar i{display:block;height:100%}
+.segs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px}
+.segs li{display:flex;align-items:center;gap:8px;font-size:14px}
+.segs .sw{flex:none;width:12px;height:12px;border-radius:3px;border:1px solid rgba(0,0,0,.08)}
+.segs .tm{flex:none;width:92px;font-variant-numeric:tabular-nums;color:var(--muted);font-size:13px}
+.segs li.note{font-weight:700}
+.segs li.note .sw{border:0;background:none;text-align:center;font-size:12px;line-height:12px}
+.days{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;padding-bottom:2px;scrollbar-width:none}
+.days button{flex:none;min-width:58px;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:6px 4px;font:600 13px var(--f-body);color:var(--fg)}
+.days button small{display:block;font-weight:500;color:var(--muted);font-size:11px}
+.days button[aria-pressed=true]{border-color:var(--accent);background:var(--accent-soft)}
+.who{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.who b{font-size:15px}
+.who .me-flag{font-size:11px;color:var(--accent);font-weight:700}
+summary::-webkit-details-marker{display:none}
+.empty{text-align:center;color:var(--muted);padding:40px 10px}
+.foot{font-size:12px;color:var(--muted);text-align:center;margin-top:14px}
+/* sign-in */
+.gate{position:fixed;inset:0;z-index:50;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:16px}
+.gate[hidden]{display:none}
+.gate .box{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:24px 20px;width:100%;max-width:380px}
+.gate h2{font:800 20px var(--f-display);margin:0 0 4px}
+.gate p{color:var(--muted);margin:0 0 14px;font-size:14px}
+.gate label{display:block;font-weight:600;font-size:13px;margin:12px 0 4px}
+.gate input{width:100%;font:16px var(--f-body);padding:11px 12px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--fg)}
+.gate .go{width:100%;margin-top:16px;border:0;border-radius:9px;padding:12px;font:700 16px var(--f-body);background:var(--accent);color:#fff}
+.gate .go:disabled{opacity:.6}
+.gate .link{background:none;border:0;padding:0;margin-top:14px;color:var(--accent);font:600 14px var(--f-body);display:block}
+.gate .msg{margin-top:12px;font-size:14px;padding:8px 10px;border-radius:8px}
+.gate .msg.bad{background:var(--bad-soft);color:var(--bad)} .gate .msg.ok{background:var(--good-soft);color:var(--good)}
+.gate .msg:empty{display:none}
+.gate [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="gate" id="gate">
+  <form class="box" id="gForm" novalidate>
+    <h2>My Rota</h2>
+    <p id="gSub">Sign in to see your shifts.</p>
+    <div id="gLogin">
+      <label for="gEmail">Email</label><input id="gEmail" type="email" autocomplete="username" inputmode="email">
+      <label for="gPass">Password</label><input id="gPass" type="password" autocomplete="current-password">
+      <button class="go" id="gGo" type="submit">Sign in</button>
+      <button class="link" id="gToSign" type="button">No account? Request access</button>
+    </div>
+    <div id="gSign" hidden>
+      <label for="sEmail">Email</label><input id="sEmail" type="email" autocomplete="email" inputmode="email">
+      <label for="sPass">Choose a password (6+ characters)</label><input id="sPass" type="password" autocomplete="new-password">
+      <label for="sPass2">Password again</label><input id="sPass2" type="password" autocomplete="new-password">
+      <button class="go" id="sGo" type="button">Request access</button>
+      <button class="link" id="gToLogin" type="button">I have an account. Sign in</button>
+    </div>
+    <div class="msg" id="gMsg" role="status"></div>
+    <button class="link" id="gOut" type="button" hidden>Sign out</button>
+  </form>
+</div>
+
+<header><div class="wrap">
+  <div class="hd"><h1>My Rota</h1><button type="button" id="out">Sign out</button></div>
+  <div class="wk">
+    <button type="button" data-wk="-1" aria-label="Previous week">‹</button>
+    <div class="lbl" id="wkLbl"></div>
+    <button type="button" data-wk="1" aria-label="Next week">›</button>
+    <button type="button" class="today" data-wk="0">Today</button>
+  </div>
+</div></header>
+<main class="wrap">
+  <div class="tabs" role="group" aria-label="View"><button type="button" data-tab="me">My week</button><button type="button" data-tab="day">Who's on</button></div>
+  <div id="view"><div class="empty">Loading…</div></div>
+  <div class="foot" id="foot"></div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+"use strict";
+const SUPABASE_URL = "https://fxfzuagyrhgibfwmvhxy.supabase.co", SUPABASE_KEY = "sb_publishable_ShdxhMrMvLZMpYaGG4fpzw_8aHSbCOR";
+const PRE = "rota/", SLOTS = 52, START = 360;
+const DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const hm = m => String(Math.floor(m/60)).padStart(2,"0") + ":" + String(m%60).padStart(2,"0");
+const slotTime = i => hm(START + i*15);
+const iso = d => d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const weekStartOf = dt => { const x = new Date(dt); x.setHours(0,0,0,0); x.setDate(x.getDate()-x.getDay()); return x; };
+const addDays = (w,n) => { const x = new Date(w+"T00:00:00"); x.setDate(x.getDate()+n); return x; };
+const shortDate = d => d.toLocaleDateString("en-GB",{day:"numeric",month:"short"});
+const hrs = n => { n = Math.round(n*100)/100; return (Number.isInteger(n) ? n : n.toFixed(2).replace(/0$/,"")) + "h"; };
+const darkText = h => { const n = parseInt((h||"#ffffff").slice(1),16); return 0.299*(n>>16)+0.587*((n>>8)&255)+0.114*(n&255) > 150; };
+
+const S = { config:null, plans:{}, loadedAt:null };
+const ui = { week: iso(weekStartOf(new Date())), day: new Date().getDay(), tab:"me", me:"" };
+try { const p = JSON.parse(localStorage.getItem("myrota")||"{}"); if (p.me) ui.me = p.me; if (p.tab) ui.tab = p.tab; } catch {}
+const saveUi = () => { try { localStorage.setItem("myrota", JSON.stringify({ me:ui.me, tab:ui.tab })); } catch {} };
+
+const cfg = () => S.config || { staff:[], activities:[] };
+const act = c => cfg().activities.find(a => a.code === c);
+const counts = c => { if (!c || c === "Off") return false; const a = act(c); return a ? a.paid !== false : true; };
+const plan = (w,d) => S.plans[`${w}_${d}`] || { rows:{} };
+const rowOf = (w,d,id) => { const r = plan(w,d).rows?.[id]; return Array.isArray(r) && r.length === SLOTS ? r : Array(SLOTS).fill(""); };
+const textOf = (w,d,id) => (plan(w,d).text||{})[id] || {};
+const staffList = () => cfg().staff.filter(s => s.dept !== "pharmacy");
+function stats(row){ let a=-1,b=-1,n=0; row.forEach((c,i)=>{ if (counts(c)){ n++; if(a<0) a=i; b=i; } }); return { on:a>=0, start:a<0?"":slotTime(a), end:b<0?"":hm(START+(b+1)*15), hours:n*.25, a, b }; }
+function segments(row){ const out = []; let i = 0;
+  while (i < SLOTS){ const c = row[i]; let n = 1; while (i+n < SLOTS && row[i+n] === c) n++;
+    if (c && c !== "Off") out.push({ c, from:i, to:i+n }); i += n; } return out; }
+function bar(row, st){ if (!st.on) return ""; let h = ""; for (let i = st.a; i <= st.b; ){ const c = row[i]; let n = 1; while (i+n <= st.b && row[i+n] === c) n++;
+    const col = !c || c === "Off" ? "var(--sunk)" : (act(c)?.color || "#ccc"); h += `<i style="flex:${n};background:${esc(col)}" title="${esc(c)}"></i>`; i += n; } return `<div class="bar">${h}</div>`; }
+function detail(w,d,id){ const row = rowOf(w,d,id), tx = textOf(w,d,id), items = [];
+  segments(row).forEach(s => { const a = act(s.c); items.push({ at:s.from, html:`<li><span class="tm">${slotTime(s.from)}–${hm(START+s.to*15)}</span><span class="sw" style="background:${esc(a?.color||"#ccc")}"></span>${esc(a?.label || s.c)}</li>` }); });
+  Object.keys(tx).forEach(k => { if (tx[k]) items.push({ at:+k + .5, html:`<li class="note"><span class="tm">${slotTime(+k)}</span><span class="sw">✎</span>${esc(tx[k])}</li>` }); });
+  return `<ul class="segs">${items.sort((x,y)=>x.at-y.at).map(x=>x.html).join("")}</ul>`; }
+
+function render(){
+  const s = new Date(ui.week+"T00:00:00"), e = addDays(ui.week, 6);
+  $("#wkLbl").innerHTML = `${shortDate(s)} – ${shortDate(e)}<small>${ui.week === iso(weekStartOf(new Date())) ? "This week" : s.getFullYear()}</small>`;
+  document.querySelectorAll("[data-tab]").forEach(b => b.setAttribute("aria-pressed", b.dataset.tab === ui.tab));
+  if (!S.config){ $("#view").innerHTML = `<div class="empty">The rota isn't set up yet.</div>`; return; }
+  const todayIso = iso(new Date());
+  if (ui.tab === "me"){
+    const opts = staffList().map(x => `<option value="${esc(x.id)}" ${x.id===ui.me?"selected":""}>${esc(x.name)}</option>`).join("");
+    let h = `<select class="me" id="me" aria-label="Your name"><option value="">Choose your name…</option>${opts}</select>`;
+    if (!ui.me || !staffList().some(x => x.id === ui.me)){ $("#view").innerHTML = h + `<div class="empty">Pick your name above to see your shifts.<br>The app remembers it on this phone.</div>`; return; }
+    let total = 0;
+    for (let d = 0; d < 7; d++){ const dt = addDays(ui.week, d), row = rowOf(ui.week, d, ui.me), st = stats(row); total += st.hours;
+      const isToday = iso(dt) === todayIso;
+      h += st.on
+        ? `<div class="card ${isToday?"today":""}"><div class="ch"><b>${DAYS[d]} ${shortDate(dt)}${isToday?'<span class="tag">Today</span>':""}</b><span class="t">${st.start}–${st.end}</span></div>
+             <div class="muted">${hrs(st.hours)}</div>${bar(row, st)}${detail(ui.week, d, ui.me)}</div>`
+        : `<div class="card off"><div class="ch"><b>${DAYS[d]} ${shortDate(dt)}${isToday?'<span class="tag">Today</span>':""}</b><span class="muted">Day off</span></div></div>`; }
+    h += `<div class="foot">${hrs(total)} this week</div>`;
+    $("#view").innerHTML = h; return;
+  }
+  // who's on
+  let h = `<div class="days">${DAYS.map((n,d)=>`<button type="button" data-day="${d}" aria-pressed="${d===ui.day}">${n.slice(0,3)}<small>${shortDate(addDays(ui.week,d))}</small></button>`).join("")}</div>`;
+  const on = staffList().map(x => ({ x, row:rowOf(ui.week, ui.day, x.id) })).map(o => ({ ...o, st:stats(o.row) })).filter(o => o.st.on).sort((p,q)=>p.st.a-q.st.a || p.st.b-q.st.b);
+  if (!on.length) h += `<div class="empty">No one is planned for ${DAYS[ui.day]} yet.</div>`;
+  on.forEach(o => { const mine = o.x.id === ui.me;
+    h += `<details class="card ${mine?"today":""}"><summary class="who" style="list-style:none;cursor:pointer"><span><b>${esc(o.x.name)}</b>${mine?' <span class="me-flag">YOU</span>':""}</span><span class="t" style="font-weight:700;font-variant-numeric:tabular-nums">${o.st.start}–${o.st.end}</span></summary>${bar(o.row, o.st)}${detail(ui.week, ui.day, o.x.id)}</details>`; });
+  $("#view").innerHTML = h;
+}
+
+document.addEventListener("click", e => { const t = e.target.closest("button"); if (!t) return;
+  if (t.dataset.wk !== undefined){ const n = +t.dataset.wk; if (n === 0){ ui.week = iso(weekStartOf(new Date())); ui.day = new Date().getDay(); } else ui.week = iso(addDays(ui.week, 7*n)); render(); return; }
+  if (t.dataset.tab){ ui.tab = t.dataset.tab; saveUi(); render(); return; }
+  if (t.dataset.day){ ui.day = +t.dataset.day; render(); return; } });
+document.addEventListener("change", e => { if (e.target.id === "me"){ ui.me = e.target.value; saveUi(); render(); } });
+
+/* ---------- sign-in (same accounts and approvals as the planner and Shift Docket) and read-only loading ---------- */
+(function(){
+  const g = id => document.getElementById(id);
+  const msg = (t, ok) => { g("gMsg").className = "msg " + (ok ? "ok" : "bad"); g("gMsg").textContent = t || ""; };
+  if (!window.supabase || !SUPABASE_URL){ g("gLogin").hidden = true; msg(window.supabase ? "This page isn't connected yet." : "Couldn't load. Check your internet connection and reload."); return; }
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const parse = v => { if (typeof v === "string"){ try { return JSON.parse(v); } catch { return null; } } return v; };
+  async function load(){
+    const { data, error } = await sb.from("kv_store").select("key,value").like("key", PRE + "%");
+    if (error) throw error;
+    S.plans = {}; (data||[]).forEach(r => { const p = r.key.slice(PRE.length); const v = parse(r.value);
+      if (p === "config/main") S.config = v; else if (p.startsWith("plans/")) S.plans[p.slice(6)] = v; });
+    S.loadedAt = new Date(); $("#foot").textContent = `Updated ${S.loadedAt.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}`; render(); }
+  const showSign = on => { g("gLogin").hidden = on; g("gSign").hidden = !on; g("gSub").textContent = on ? "A manager approves new accounts." : "Sign in to see your shifts."; msg(""); };
+  g("gToSign").onclick = () => showSign(true); g("gToLogin").onclick = () => showSign(false);
+  g("gForm").addEventListener("submit", async ev => { ev.preventDefault(); const b = g("gGo"); b.disabled = true; b.textContent = "Signing in…"; msg("");
+    try { const { data, error } = await sb.auth.signInWithPassword({ email:g("gEmail").value.trim(), password:g("gPass").value });
+      if (error) msg(/invalid/i.test(error.message) ? "That email or password isn't right." : error.message); else await enter(data.session.user); }
+    catch { msg("No internet connection. Try again."); } finally { b.disabled = false; b.textContent = "Sign in"; } });
+  g("sGo").onclick = async () => { const email = g("sEmail").value.trim(), pw = g("sPass").value;
+    if (!/^\S+@\S+\.\S+$/.test(email)){ msg("Enter a valid email address."); return; }
+    if (pw.length < 6){ msg("The password needs at least 6 characters."); return; }
+    if (pw !== g("sPass2").value){ msg("The two passwords don't match."); return; }
+    const b = g("sGo"); b.disabled = true; b.textContent = "Sending…"; msg("");
+    try { const { data, error } = await sb.auth.signUp({ email, password:pw });
+      if (error){ msg(/registered|exists/i.test(error.message) ? "That email already has an account. Sign in instead." : error.message); return; }
+      if (data?.user){ try { await sb.from("user_approvals").insert({ user_id:data.user.id, email, approved:false, is_admin:false }); } catch {} }
+      g("gSign").hidden = true; msg(data?.session ? "Request sent. You can sign in once a manager approves it." : "Request sent. Confirm your email from your inbox, then wait for a manager to approve it.", true); }
+    catch { msg("No internet connection. Try again."); } finally { b.disabled = false; b.textContent = "Request access"; } };
+  const out = async () => { await sb.auth.signOut(); location.reload(); };
+  g("gOut").onclick = out; g("out").onclick = out;
+  let started = false;
+  async function enter(user){
+    if (started) return;
+    let ap = null;
+    try { const { data, error } = await sb.from("user_approvals").select("approved,is_admin").eq("user_id", user.id).maybeSingle(); if (error) throw error; ap = data; }
+    catch { g("gLogin").hidden = true; g("gOut").hidden = false; msg("Couldn't check your access. Check your connection and reload."); return; }
+    if (!ap || !(ap.approved || ap.is_admin)){ g("gLogin").hidden = true; g("gOut").hidden = false; msg("Your account is waiting for a manager to approve it."); return; }
+    try { await load(); } catch { g("gLogin").hidden = true; g("gOut").hidden = false; msg("Couldn't load the rota. Check your connection and reload."); return; }
+    started = true; g("gate").hidden = true;
+    setInterval(() => { if (!document.hidden) load().catch(()=>{}); }, 60000);
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) load().catch(()=>{}); });
+  }
+  sb.auth.getSession().then(({ data }) => { if (data?.session) enter(data.session.user); }).catch(()=>{});
+})();
+</script>
+</body>
+</html>
